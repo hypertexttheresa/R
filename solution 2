@@ -1,0 +1,14 @@
+  #By considering the terms in the Fibonacci sequence whose values do not exceed four million, find the sum of the even-valued terms.
+  
+  Fibo <- 0
+  Fibo[1] <- 1
+  Fibo[2] <- 2
+  
+  
+  i <- 2
+  while(Fibo[i] + Fibo[i-1] < 4000000){
+    Fibo[i+1] <- Fibo[i] + Fibo[i-1]
+    i <- i+1
+  }
+  
+  sum(Fibo[which(Fibo %% 2 == 0)])
