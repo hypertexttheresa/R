@@ -1,0 +1,92 @@
+library(readr)
+library(dplyr)
+setwd("~/Documents/coursera/R")
+
+daily_SPEC <- read_csv("data/daily_SPEC_2014.csv.bz2") %>%
+  select(Latitude, Longitude, `Date Local`, `Arithmetic Mean`,`Parameter Name`, `State Name`,`State Code`,`County Code`,`Site Num` )
+
+head(daily_SPEC)
+str(daily_SPEC)
+
+q1 <- daily_SPEC %>%
+  group_by(`Parameter Name`, `State Name`) %>%
+  summarize(avg_brom = mean(`Arithmetic Mean`, na.rm = TRUE)) %>%
+  filter(`State Name` == "Wisconsin" & `Parameter Name` == mean(daily_SPEC$`Arithmetic Mean`[which(daily_SPEC$`Parameter Name` == "Bromine PM2.5 LC" &)
+
+q2 <- daily_SPEC %>%
+  group_by(`Parameter Name`) %>%
+  summarize(avg_level = mean(`Arithmetic Mean`, na.rm = TRUE))
+
+  
+q3 <- daily_SPEC %>%
+  group_by(`State Code`,`County Code`, `Site Num`) %>%
+  filter(`Parameter Name` == "Sulfate PM2.5 LC") %>%
+  summarize(avg_level = mean(`Arithmetic Mean`, na.rm = TRUE))
+
+q4 <- daily_SPEC %>%
+  filter(`State Name` %in% c("California","Arizona")) %>%
+  filter(`Parameter Name` == "EC PM2.5 LC TOR") %>%
+  group_by(`State Name`) %>%
+  summarize(avg_level = mean(`Arithmetic Mean`, na.rm = TRUE))
+q4[2,2]-q4[1,2]
+
+q5 <- daily_SPEC %>%
+  filter(Longitude < -100) %>%
+  filter(`Parameter Name` == "OC PM2.5 LC TOR") %>%
+  summarize(mdn = median(`Arithmetic Mean`, na.rm = TRUE))
+q5
+
+library(readxl)
+aqs <- read_xlsx("data/aqs_sites.xlsx") %>%
+  select(`Longitude`,`Latitude`,`Land Use`,`Location Setting`)
+
+summary_aqs <- aqs %>%
+  group_by(`Land Use`, `Location Setting`) %>%
+  summarize(n_obs = n())
+
+q6 <- aqs %>%
+  select(`Land Use`, `Location Setting`) %>%
+  group_by(`Land Use`, `Location Setting`) %>%
+  summarize(n_obs = n()) %>%
+  filter(`Land Use` == "RESIDENTIAL" & `Location Setting` == "SUBURBAN")
+
+aqs_join <- left_join(daily_SPEC, aqs, by = c("Latitude", "Longitude"))
+
+str(daily_SPEC)
+str(aqs)
+
+q7 <- aqs_join %>%
+  filter(Longitude >= -100) %>%
+  select(`Land Use`, `Location Setting`, `Arithmetic Mean`, `Parameter Name`) %>%
+  filter(`Land Use` == "RESIDENTIAL" & `Location Setting` == "SUBURBAN" & `Parameter Name` == "EC PM2.5 LC TOR") %>%
+  group_by(`Land Use`, `Location Setting`) %>%
+  summarize(mdn = median(`Arithmetic Mean`))
+
+library(lubridate)
+
+q8 <- aqs_join %>%
+  filter(`Land Use` == "COMMERCIAL" & `Parameter Name` == "Sulfate PM2.5 LC") %>%
+  mutate(
+    month = months(`Date Local`)) %>%
+  group_by(month) %>%
+  summarize(avg = mean(`Arithmetic Mean`))
+
+
+q9 <- aqs_join %>%
+  filter(`State Code` == "06" & `County Code` == "065" & `Site Num` == "8001" & `Parameter Name` %in% c("Sulfate PM2.5 LC", "Total Nitrate PM2.5 LC")) %>%
+  group_by(`Date Local`,`Parameter Name`) %>%
+  summarize(
+    avg_mean = mean(`Arithmetic Mean`)) %>%
+  group_by(`Date Local`) %>%
+  summarize(sumSulNit = sum(avg_mean))
+
+library(tidyr)
+?spread
+
+q10 <- aqs_join %>%
+  filter(`Parameter Name` %in% c("Sulfate PM2.5 LC", "Total Nitrate PM2.5 LC")) %>%
+  group_by(`State Code`, `County Code`, `Site Num`,`Parameter Name`,`Date Local`) %>%
+  summarize(avg_mean = mean(`Arithmetic Mean`)) %>%
+  spread(`Parameter Name`, avg_mean) %>%
+  group_by(`State Code`, `County Code`, `Site Num`) %>%
+  summarize(correlation = cor(`Sulfate PM2.5 LC`,`Total Nitrate PM2.5 LC`))
